@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'overlay_helper.dart';
 
 void main() {
@@ -12,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PageView + Overlay Expand Transition',
+      title: 'PageView + Overlay (Below & Center)',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const MyOverlaySample(),
     );
@@ -29,19 +28,38 @@ class MyOverlaySample extends StatefulWidget {
 class _MyOverlaySampleState extends State<MyOverlaySample> {
   final int totalDays = 10;
 
+  final GlobalKey _pageViewKey = GlobalKey();
+
+  ///
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => showMessageOverlay(context: context, targetKey: _pageViewKey, message: '初期表示時の Overlay'));
+  }
+
   ///
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: SizedBox(
+        child: Container(
+          key: _pageViewKey,
           width: 60,
           height: 200,
+          color: Colors.grey.withOpacity(0.2),
           child: PageView.builder(
             itemCount: totalDays,
             scrollDirection: Axis.vertical,
             onPageChanged: (int index) {
-              showMessageOverlay(context: context, message: '選択された日: ${index + 1}');
+              showMessageOverlay(
+                context: context,
+                targetKey: _pageViewKey,
+
+                message: '選択された日: ${index + 1}',
+                // overlayWidth: 180.0,  // デフォルト値でもOK
+              );
             },
             itemBuilder: (BuildContext context, int index) {
               return CircleAvatar(

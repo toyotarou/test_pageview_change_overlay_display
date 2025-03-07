@@ -2,14 +2,23 @@ import 'package:flutter/material.dart';
 
 void showMessageOverlay({
   required BuildContext context,
+  required GlobalKey targetKey,
   required String message,
   Duration fadeDuration = const Duration(milliseconds: 300),
   Duration displayDuration = const Duration(seconds: 1),
+  double overlayWidth = 180.0,
 }) {
+  final RenderBox? renderBox = targetKey.currentContext?.findRenderObject() as RenderBox?;
+  if (renderBox == null) {
+    return;
+  }
+
+  final Offset offset = renderBox.localToGlobal(Offset.zero);
+  final Size size = renderBox.size;
+
   final OverlayState overlayState = Overlay.of(context);
 
   final Duration totalDuration = fadeDuration + displayDuration + fadeDuration;
-
   final AnimationController animationController =
       AnimationController(vsync: Navigator.of(context), duration: totalDuration);
 
@@ -25,21 +34,25 @@ void showMessageOverlay({
         tween: Tween<double>(begin: 1.0, end: 4.0).chain(CurveTween(curve: Curves.easeInOut)), weight: fadeOutMs),
   ]).animate(animationController);
 
-  final Animation<double> opacityAnimation = TweenSequence<double>(
-    <TweenSequenceItem<double>>[
-      TweenSequenceItem<double>(
-          tween: Tween<double>(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeIn)), weight: fadeInMs),
-      TweenSequenceItem<double>(tween: ConstantTween<double>(1.0), weight: displayMs),
-      TweenSequenceItem<double>(
-          tween: Tween<double>(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeOut)), weight: fadeOutMs),
-    ],
-  ).animate(animationController);
+  final Animation<double> opacityAnimation = TweenSequence<double>(<TweenSequenceItem<double>>[
+    TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 0.0, end: 1.0).chain(CurveTween(curve: Curves.easeIn)), weight: fadeInMs),
+    TweenSequenceItem<double>(tween: ConstantTween<double>(1.0), weight: displayMs),
+    TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 1.0, end: 0.0).chain(CurveTween(curve: Curves.easeOut)), weight: fadeOutMs),
+  ]).animate(animationController);
 
   late OverlayEntry overlayEntry;
 
   overlayEntry = OverlayEntry(
     builder: (BuildContext context) {
-      return Center(
+      final double leftPosition = offset.dx + (size.width - overlayWidth) / 2;
+
+      final double topPosition = offset.dy + size.height;
+
+      return Positioned(
+        left: leftPosition,
+        top: topPosition,
         child: Material(
           color: Colors.transparent,
           child: AnimatedBuilder(
@@ -50,15 +63,18 @@ void showMessageOverlay({
                 child: Opacity(
                   opacity: opacityAnimation.value,
                   child: Container(
+                    width: overlayWidth,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.6),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(message, style: const TextStyle(color: Colors.white, fontSize: 16)),
+                    child: Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ),
                   ),
-
-//                  child: const Icon(Icons.ac_unit, color: Colors.blueAccent),
                 ),
               );
             },
